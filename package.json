@@ -2,10 +2,10 @@
   "name": "arizu-cinema-bot",
   "version": "1.0.0",
   "description": "Arizu Cinema Discord Bot",
-  "main": "src/bot.js",
+  "main": "bot.js",
   "scripts": {
-  "start": "node src/bot.js",
-  "register": "node src/register-commands.js"
+    "start": "node bot.js",
+    "register": "node register-commands.js"
   },
   "dependencies": {
     "discord.js": "^14.24.2",
