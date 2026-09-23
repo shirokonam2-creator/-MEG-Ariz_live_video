@@ -223,4 +223,5 @@ async function startBot() {
   }
 }
 
-startBot(); 
+console.log("🚀 Đang khởi động Arizu Cinema...");
+startBot();
