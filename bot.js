@@ -9,7 +9,7 @@ const {
 
 const {
   createWatchRoom
-} = require("./watch/watchRoom");
+} = require("./watchRoom");
 
 const client = new Client({
   intents: [
