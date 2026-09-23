@@ -6,16 +6,38 @@ const {
   Client,
   GatewayIntentBits,
   Events,
-  EmbedBuilder
+  EmbedBuilder,
+  REST,
+  Routes,
+  SlashCommandBuilder
 } = require("discord.js");
 
 const {
   createWatchRoom
 } = require("./watchRoom");
 
-// ===============================
-// HTTP SERVER FOR RENDER
-// ===============================
+// ================================
+// KIỂM TRA ENV
+// ================================
+
+if (!process.env.DISCORD_TOKEN) {
+  console.error("❌ Thiếu DISCORD_TOKEN!");
+  process.exit(1);
+}
+
+if (!process.env.CLIENT_ID) {
+  console.error("❌ Thiếu CLIENT_ID!");
+  process.exit(1);
+}
+
+if (!process.env.GUILD_ID) {
+  console.error("❌ Thiếu GUILD_ID!");
+  process.exit(1);
+}
+
+// ================================
+// RENDER HTTP SERVER
+// ================================
 
 const PORT = process.env.PORT || 10000;
 
@@ -31,9 +53,9 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`🌐 HTTP server đang chạy trên port ${PORT}`);
 });
 
-// ===============================
+// ================================
 // DISCORD CLIENT
-// ===============================
+// ================================
 
 const client = new Client({
   intents: [
@@ -41,29 +63,75 @@ const client = new Client({
   ]
 });
 
-// ===============================
-// BOT READY
-// ===============================
+// ================================
+// LỆNH /WATCH
+// ================================
 
-client.once(Events.ClientReady, (readyClient) => {
+const commands = [
+  new SlashCommandBuilder()
+    .setName("watch")
+    .setDescription("Tạo phòng xem video")
+    .addStringOption(option =>
+      option
+        .setName("url")
+        .setDescription("Link video")
+        .setRequired(true)
+    )
+    .toJSON()
+];
+
+// ================================
+// ĐĂNG KÝ SLASH COMMAND
+// ================================
+
+async function registerCommands() {
+  try {
+    console.log("⏳ Đang đăng ký /watch...");
+
+    const rest = new REST({
+      version: "10"
+    }).setToken(process.env.DISCORD_TOKEN);
+
+    await rest.put(
+      Routes.applicationGuildCommands(
+        process.env.CLIENT_ID,
+        process.env.GUILD_ID
+      ),
+      {
+        body: commands
+      }
+    );
+
+    console.log("✅ Đã đăng ký /watch thành công!");
+  } catch (error) {
+    console.error("❌ Không đăng ký được /watch:");
+    console.error(error);
+  }
+}
+
+// ================================
+// BOT READY
+// ================================
+
+client.once(Events.ClientReady, readyClient => {
   console.log(`✅ Bot đã đăng nhập: ${readyClient.user.tag}`);
-  console.log(`🎬 Arizu Cinema đang hoạt động!`);
+  console.log("🎬 Arizu Cinema đang hoạt động!");
 });
 
-// ===============================
-// INTERACTIONS
-// ===============================
+// ================================
+// XỬ LÝ TƯƠNG TÁC
+// ================================
 
-client.on(Events.InteractionCreate, async (interaction) => {
+client.on(Events.InteractionCreate, async interaction => {
+
   try {
 
-    // ===========================
-    // SLASH COMMAND
-    // ===========================
+    // ============================
+    // /watch
+    // ============================
 
     if (interaction.isChatInputCommand()) {
 
-      // /watch
       if (interaction.commandName === "watch") {
 
         const url = interaction.options.getString("url");
@@ -77,7 +145,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
           return;
         }
 
-        // Tạo phòng xem
         const room = createWatchRoom(
           url,
           interaction.user
@@ -93,28 +160,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
       return;
     }
 
-    // ===========================
-    // BUTTON
-    // ===========================
+    // ============================
+    // NÚT THÔNG TIN
+    // ============================
 
     if (interaction.isButton()) {
 
-      // Nút thông tin
       if (interaction.customId === "watch_info") {
 
-        const infoEmbed = new EmbedBuilder()
-          .setTitle("ℹ️ Thông tin Arizu Cinema")
+        const embed = new EmbedBuilder()
+          .setTitle("ℹ️ Arizu Cinema")
           .setDescription(
             `🎬 **Phòng xem Arizu Cinema**\n\n` +
             `👤 Người xem: ${interaction.user}\n` +
             `📺 Hệ thống phòng xem đang hoạt động.\n\n` +
-            `🔗 Video được mở thông qua liên kết gốc.\n\n` +
-            `⚠️ Arizu Cinema không tải hoặc lưu lại video.`
+            `🔗 Video được mở bằng liên kết gốc.`
           )
           .setTimestamp();
 
         await interaction.reply({
-          embeds: [infoEmbed],
+          embeds: [embed],
           ephemeral: true
         });
       }
@@ -122,13 +187,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   } catch (error) {
 
-    console.error("❌ Lỗi Interaction:", error);
+    console.error("❌ Interaction error:", error);
 
-    // Nếu interaction chưa được trả lời
     if (!interaction.replied && !interaction.deferred) {
 
       await interaction.reply({
-        content: "❌ Đã xảy ra lỗi khi xử lý yêu cầu.",
+        content: "❌ Có lỗi khi xử lý lệnh.",
         ephemeral: true
       });
 
@@ -136,24 +200,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 });
 
-// ===============================
-// DISCORD LOGIN
-// ===============================
+// ================================
+// KHỞI ĐỘNG
+// ================================
 
-if (!process.env.DISCORD_TOKEN) {
+async function startBot() {
 
-  console.error(
-    "❌ Không tìm thấy DISCORD_TOKEN trong Environment Variables!"
-  );
+  await registerCommands();
 
-  process.exit(1);
+  console.log("🔐 Đang kết nối tới Discord...");
+
+  try {
+
+    await client.login(process.env.DISCORD_TOKEN);
+
+  } catch (error) {
+
+    console.error("❌ Không thể đăng nhập Discord:");
+    console.error(error);
+
+    process.exit(1);
+  }
 }
 
-client.login(process.env.DISCORD_TOKEN)
-  .then(() => {
-    console.log("🔐 Đang kết nối tới Discord...");
-  })
-  .catch((error) => {
-    console.error("❌ Không thể đăng nhập Discord:", error);
-    process.exit(1);
-  }); 
+startBot(); 
