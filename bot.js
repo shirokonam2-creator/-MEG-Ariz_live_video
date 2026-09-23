@@ -115,7 +115,7 @@ async function registerCommands() {
 
 client.once(Events.ClientReady, readyClient => {
   console.log(`✅ Bot đã đăng nhập: ${readyClient.user.tag}`);
-  console.log("🎬 Arizu Cinema đang hoạt động!");
+  console.log("🎬 [MEG]Ariz_live_video đang hoạt động!");
 });
 
 // ================================
@@ -171,7 +171,7 @@ client.on(Events.InteractionCreate, async interaction => {
         const embed = new EmbedBuilder()
           .setTitle("ℹ️ Arizu Cinema")
           .setDescription(
-            `🎬 **Phòng xem Arizu Cinema**\n\n` +
+            `🎬 **Phòng xem [mEG]Ariz_live_video**\n\n` +
             `👤 Người xem: ${interaction.user}\n` +
             `📺 Hệ thống phòng xem đang hoạt động.\n\n` +
             `🔗 Video được mở bằng liên kết gốc.`
