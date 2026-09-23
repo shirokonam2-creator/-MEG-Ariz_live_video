@@ -1,0 +1,14 @@
+{
+  "name": "arizu-cinema-bot",
+  "version": "1.0.0",
+  "description": "Arizu Cinema Discord Bot",
+  "main": "src/bot.js",
+  "scripts": {
+  "start": "node src/bot.js",
+  "register": "node src/register-commands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.24.2",
+    "dotenv": "^17.2.2"
+  }
+}
