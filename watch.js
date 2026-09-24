@@ -18,7 +18,7 @@ module.exports = {
 
     await interaction.reply({
       content:
-        `🎬 **Arizu Cinema**\n\n` +
+        `🎬 **[MEG]Ariz_CFM_BOT**\n\n` +
         `🔗 **Video:** ${url}\n` +
         `⏳ Đang chuẩn bị phòng xem...`,
       ephemeral: false
