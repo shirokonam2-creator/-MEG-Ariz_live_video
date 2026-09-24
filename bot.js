@@ -3,20 +3,6 @@ require("dotenv").config();
 const http = require("http");
 
 const {
-  Client,
-  GatewayIntentBits,
-  Events,
-  EmbedBuilder,
-  REST,
-  Routes,
-  SlashCommandBuilder
-} = require("discord.js");
-
-const {
-  createWatchRoom
-} = require("./watchRoom");
-
-const {
   createCinemaRoom,
   getRoom,
   updateRoom
@@ -25,6 +11,10 @@ const {
 const {
   startCinemaServer
 } = require("./cinema/cinemaServer");
+
+const {
+  createWatchRoom
+} = require("./watchRoom");
 
 // ================================
 // KIỂM TRA ENV
