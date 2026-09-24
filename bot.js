@@ -46,7 +46,7 @@ const server = http.createServer((req, res) => {
     "Content-Type": "text/plain; charset=utf-8"
   });
 
-  res.end("Arizu Cinema Bot is online!");
+  res.end("[MEG]ARIZ_CFM_BOT Bot is online!");
 });
 
 server.listen(PORT, "0.0.0.0", () => {
@@ -115,7 +115,7 @@ async function registerCommands() {
 
 client.once(Events.ClientReady, readyClient => {
   console.log(`✅ Bot đã đăng nhập: ${readyClient.user.tag}`);
-  console.log("🎬 [MEG]Ariz_live_video đang hoạt động!");
+  console.log("🎬 [MEG]Ariz_CFM_BOT đang hoạt động!");
 });
 
 // ================================
@@ -169,9 +169,9 @@ client.on(Events.InteractionCreate, async interaction => {
       if (interaction.customId === "watch_info") {
 
         const embed = new EmbedBuilder()
-          .setTitle("ℹ️ Arizu Cinema")
+          .setTitle("ℹ️ [MEG]Ariz_CFM_BOT")
           .setDescription(
-            `🎬 **Phòng xem [mEG]Ariz_live_video**\n\n` +
+            `🎬 **Phòng xem [MEG]Ariz_CFM_BOT**\n\n` +
             `👤 Người xem: ${interaction.user}\n` +
             `📺 Hệ thống phòng xem đang hoạt động.\n\n` +
             `🔗 Video được mở bằng liên kết gốc.`
@@ -223,5 +223,5 @@ async function startBot() {
   }
 }
 
-console.log("🚀 Đang khởi động Arizu Cinema...");
+console.log("🚀 Đang khởi động [MEG]Ariz_CFM_BOT...");
 startBot();
