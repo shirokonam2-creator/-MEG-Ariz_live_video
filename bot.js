@@ -319,6 +319,8 @@ const cinemaRoom = createCinemaRoom(
   url,
   interaction.user
 );
+const cinemaUrl =
+  `https://meg-ariz-live-video-1.onrender.com/cinema?room=${cinemaRoom.id}`;
 
 const cinemaUrl =
   `https://meg-ariz-live-video-1.onrender.com/cinema?room=${cinemaRoom.id}`;
