@@ -1,44 +1,53 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>Arizu Cinema</title>
 
-  <link rel="stylesheet" href="/cinema.css">
+  <link
+    rel="stylesheet"
+    href="/cinema.css"
+  >
 </head>
 
 <body>
 
   <div class="app">
 
-    <header>
+    <header class="header">
+
       <h1>🎬 Arizu Cinema</h1>
-      <span id="status">Đang kết nối...</span>
+
+      <span id="status">
+        🔄 Đang kết nối...
+      </span>
+
     </header>
+
 
     <main>
 
       <div id="playerContainer">
 
-        <iframe
-          id="youtubePlayer"
-          allow="autoplay; encrypted-media; fullscreen"
-          allowfullscreen>
-        </iframe>
+        <div id="youtubeContainer"></div>
 
         <video
           id="videoPlayer"
           controls
           playsinline
-          hidden>
-        </video>
+          hidden
+        ></video>
 
       </div>
 
-      <section class="controls">
+
+      <div class="controls">
 
         <button id="playBtn">
           ▶️ Play
@@ -52,11 +61,12 @@
           ⏹️ Stop
         </button>
 
-      </section>
+      </div>
+
 
       <section class="roomInfo">
 
-        <h2>Phòng xem</h2>
+        <h2>🎬 Thông tin phòng</h2>
 
         <p>
           👤 Người tạo:
@@ -74,9 +84,8 @@
 
   </div>
 
-  
+
   <script src="/cinema.js"></script>
 
 </body>
-        </html>
-  
+</html> 
