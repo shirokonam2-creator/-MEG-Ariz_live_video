@@ -326,7 +326,7 @@ const cinemaUrl =
 room.embeds[0].setDescription(
   `**Phòng xem đã được tạo!**\n\n` +
   `👤 Người tạo: ${interaction.user}\n` +
-  `🎬 Arizu Cinema Room\n\n` +
+  `🎬 [MEG]Ariz_CFM_BOT Room\n\n` +
   `🌐 [Mở phòng xem](${cinemaUrl})\n\n` +
   `📺 Phòng xem được đồng bộ trạng thái.`
 );
