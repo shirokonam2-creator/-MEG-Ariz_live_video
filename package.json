@@ -1,7 +1,7 @@
 {
-  "name": "arizu-cinema-bot",
+  "name": "[MEG]Ariz_CFM_BOT-bot",
   "version": "1.0.0",
-  "description": "Arizu Cinema Discord Bot",
+  "description": "[MEG]Ariz_CFM_BOT Discord Bot",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js",
