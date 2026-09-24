@@ -16,6 +16,12 @@ const {
   createWatchRoom
 } = require("./watchRoom");
 
+const {
+  createCinemaRoom,
+  getRoom,
+  updateRoom
+} = require("./cinema/cinemaRoom");
+
 // ================================
 // KIỂM TRA ENV
 // ================================
