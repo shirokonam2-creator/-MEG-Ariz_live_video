@@ -49,10 +49,6 @@ if (!process.env.GUILD_ID) {
 // CINEMA LIVE SERVER
 // ================================
 
-const {
-  startCinemaServer
-} = require("./cinema/cinemaServer");
-
 const PORT =
   process.env.PORT || 10000;
 
