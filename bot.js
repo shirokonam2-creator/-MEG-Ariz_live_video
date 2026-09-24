@@ -311,11 +311,27 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         const room = createWatchRoom(
-          url,
-          interaction.user
-        );
+  url,
+  interaction.user
+);
 
-        await interaction.reply(room);
+const cinemaRoom = createCinemaRoom(
+  url,
+  interaction.user
+);
+
+const cinemaUrl =
+  `https://meg-ariz-live-video-1.onrender.com/cinema?room=${cinemaRoom.id}`;
+
+room.embeds[0].setDescription(
+  `**Phòng xem đã được tạo!**\n\n` +
+  `👤 Người tạo: ${interaction.user}\n` +
+  `🎬 Arizu Cinema Room\n\n` +
+  `🌐 [Mở phòng xem](${cinemaUrl})\n\n` +
+  `📺 Phòng xem được đồng bộ trạng thái.`
+);
+
+await interaction.reply(room);
 
         console.log(
           `🎬 ${interaction.user.tag} đã tạo phòng xem: ${url}`
