@@ -22,6 +22,10 @@ const {
   updateRoom
 } = require("./cinema/cinemaRoom");
 
+const {
+  startCinemaServer
+} = require("./cinema/cinemaServer");
+
 // ================================
 // KIỂM TRA ENV
 // ================================
@@ -42,18 +46,17 @@ if (!process.env.GUILD_ID) {
 }
 
 // ================================
-// RENDER HTTP SERVER
+// CINEMA LIVE SERVER
 // ================================
 
-const PORT = process.env.PORT || 10000;
+const {
+  startCinemaServer
+} = require("./cinema/cinemaServer");
 
-const fs = require("fs");
-const path = require("path");
+const PORT =
+  process.env.PORT || 10000;
 
-const cinemaPublic =
-  path.join(__dirname, "cinema", "public");
-
-const server = http.createServer((req, res) => {
+startCinemaServer(PORT);
 
   // ============================
   // CINEMA ROOM API
