@@ -7,13 +7,17 @@ const {
   GatewayIntentBits,
   Events,
   EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   REST,
   Routes,
   SlashCommandBuilder
 } = require("discord.js");
 
 const {
-  createWatchRoom
+  createWatchRoom,
+  getWatchRoom
 } = require("./watchRoom");
 
 // ================================
@@ -64,33 +68,51 @@ const client = new Client({
 });
 
 // ================================
-// LỆNH /WATCH
+// LỆNH
 // ================================
 
 const commands = [
+
+  // ==============================
+  // /watch
+  // ==============================
+
   new SlashCommandBuilder()
-  .setName("watch")
-  .setDescription("Tạo phòng xem video")
-  .addUserOption(option =>
-    option
-      .setName("chu_phong")
-      .setDescription("Chủ phòng xem")
-      .setRequired(true)
-  )
-  .addChannelOption(option =>
-    option
-      .setName("phong_call")
-      .setDescription("Phòng voice dùng để xem")
-      .setRequired(true)
-      .addChannelTypes(2)
-  )
-  .addStringOption(option =>
-    option
-      .setName("link")
-      .setDescription("Link video")
-      .setRequired(true)
-  )
-  .toJSON()
+    .setName("watch")
+    .setDescription("Tạo phòng xem video")
+
+    .addUserOption(option =>
+      option
+        .setName("chu_phong")
+        .setDescription("Chủ phòng xem")
+        .setRequired(true)
+    )
+
+    .addChannelOption(option =>
+      option
+        .setName("phong_call")
+        .setDescription("Phòng voice dùng để xem")
+        .setRequired(true)
+        .addChannelTypes(2)
+    )
+
+    .addStringOption(option =>
+      option
+        .setName("link")
+        .setDescription("Link video")
+        .setRequired(true)
+    )
+
+    .toJSON(),
+
+  // ==============================
+  // /join
+  // ==============================
+
+  new SlashCommandBuilder()
+    .setName("join")
+    .setDescription("Tham gia phòng xem đang hoạt động")
+    .toJSON()
 ];
 
 // ================================
@@ -99,7 +121,7 @@ const commands = [
 
 async function registerCommands() {
   try {
-    console.log("⏳ Đang đăng ký /watch...");
+    console.log("⏳ Đang đăng ký /watch và /join...");
 
     const rest = new REST({
       version: "10"
@@ -115,9 +137,9 @@ async function registerCommands() {
       }
     );
 
-    console.log("✅ Đã đăng ký /watch thành công!");
+    console.log("✅ Đã đăng ký /watch và /join thành công!");
   } catch (error) {
-    console.error("❌ Không đăng ký được /watch:");
+    console.error("❌ Không đăng ký được lệnh:");
     console.error(error);
   }
 }
@@ -140,16 +162,25 @@ client.on(Events.InteractionCreate, async interaction => {
   try {
 
     // ============================
-    // /watch
+    // SLASH COMMAND
     // ============================
 
     if (interaction.isChatInputCommand()) {
 
+      // ==========================
+      // /WATCH
+      // ==========================
+
       if (interaction.commandName === "watch") {
 
-        const owner = interaction.options.getUser("chu_phong");
-const voiceChannel = interaction.options.getChannel("phong_call");
-const url = interaction.options.getString("link");
+        const owner =
+          interaction.options.getUser("chu_phong");
+
+        const voiceChannel =
+          interaction.options.getChannel("phong_call");
+
+        const url =
+          interaction.options.getString("link");
 
         if (!url) {
           await interaction.reply({
@@ -171,9 +202,61 @@ const url = interaction.options.getString("link");
         console.log(
           `🎬 ${interaction.user.tag} đã tạo phòng xem: ${url}`
         );
+
+        return;
       }
 
-      return;
+      // ==========================
+      // /JOIN
+      // ==========================
+
+      if (interaction.commandName === "join") {
+
+        const room = getWatchRoom();
+
+        if (!room) {
+
+          await interaction.reply({
+            content:
+              "❌ Hiện không có phòng xem nào đang hoạt động.",
+            ephemeral: true
+          });
+
+          return;
+        }
+
+        const embed = new EmbedBuilder()
+          .setTitle("🎬 Tham gia Cinema Room")
+          .setDescription(
+            `👑 **Chủ phòng:** ${room.owner}\n` +
+            `🔊 **Phòng call:** ${room.voiceChannel}\n` +
+            `🔗 **Video:** ${room.url}\n\n` +
+            `👥 Bạn đã tham gia phòng xem.\n` +
+            `▶️ Nhấn nút bên dưới để mở video.`
+          )
+          .setTimestamp();
+
+        const row =
+          new ActionRowBuilder().addComponents(
+
+            new ButtonBuilder()
+              .setLabel("▶️ Mở video")
+              .setStyle(ButtonStyle.Link)
+              .setURL(room.url)
+
+          );
+
+        await interaction.reply({
+          embeds: [embed],
+          components: [row]
+        });
+
+        console.log(
+          `👥 ${interaction.user.tag} đã tham gia phòng xem.`
+        );
+
+        return;
+      }
     }
 
     // ============================
@@ -228,16 +311,24 @@ async function startBot() {
 
   try {
 
-    await client.login(process.env.DISCORD_TOKEN);
+    await client.login(
+      process.env.DISCORD_TOKEN
+    );
 
   } catch (error) {
 
-    console.error("❌ Không thể đăng nhập Discord:");
+    console.error(
+      "❌ Không thể đăng nhập Discord:"
+    );
+
     console.error(error);
 
     process.exit(1);
   }
 }
 
-console.log("🚀 Đang khởi động [MEG]Ariz_CFM_BOT...");
+console.log(
+  "🚀 Đang khởi động [MEG]Ariz_CFM_BOT..."
+);
+
 startBot();
