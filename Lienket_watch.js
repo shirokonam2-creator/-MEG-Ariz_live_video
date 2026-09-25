@@ -1,6 +1,6 @@
 // ========================================
 // Lienket_watch.js
-// Kết nối /watch với Live
+// Cầu nối /watch ↔ Live
 // ========================================
 
 const {
@@ -11,11 +11,12 @@ const {
   pauseLive,
   resumeLive,
   stopLive,
-  clearLive
+  clearLive,
+  MAX_WATCH_LINKS
 } = require("./Live");
 
 // ========================================
-// Nhận dữ liệu từ /watch
+// Tạo Live từ /watch
 // ========================================
 
 function startWatchLive({
@@ -24,6 +25,18 @@ function startWatchLive({
   videoName,
   links
 }) {
+
+  if (!Array.isArray(links)) {
+    throw new Error(
+      "Danh sách link không hợp lệ."
+    );
+  }
+
+  if (links.length > MAX_WATCH_LINKS) {
+    throw new Error(
+      `Chỉ được tối đa ${MAX_WATCH_LINKS} link video.`
+    );
+  }
 
   return createLive({
     owner,
@@ -34,7 +47,7 @@ function startWatchLive({
 }
 
 // ========================================
-// Lấy trạng thái Live
+// Lấy Live
 // ========================================
 
 function getWatchLive() {
@@ -42,7 +55,7 @@ function getWatchLive() {
 }
 
 // ========================================
-// Lấy video hiện tại
+// Video hiện tại
 // ========================================
 
 function getWatchCurrentVideo() {
@@ -90,12 +103,22 @@ function clearWatchLive() {
 }
 
 module.exports = {
+
+  MAX_WATCH_LINKS,
+
   startWatchLive,
+
   getWatchLive,
+
   getWatchCurrentVideo,
+
   watchNext,
+
   watchPause,
+
   watchResume,
+
   watchStop,
+
   clearWatchLive
 };
