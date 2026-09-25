@@ -1,4 +1,3 @@
-
 const {
   ActionRowBuilder,
   ButtonBuilder,
@@ -6,7 +5,16 @@ const {
   EmbedBuilder
 } = require("discord.js");
 
+// Lưu phòng xem hiện tại
+let activeWatchRoom = null;
+
 function createWatchRoom(url, owner, voiceChannel) {
+
+  activeWatchRoom = {
+    url,
+    owner,
+    voiceChannel
+  };
 
   const embed = new EmbedBuilder()
     .setTitle("🎬 [MEG]Ariz_CFM_BOT — Cinema Room")
@@ -40,6 +48,11 @@ function createWatchRoom(url, owner, voiceChannel) {
   };
 }
 
+function getWatchRoom() {
+  return activeWatchRoom;
+}
+
 module.exports = {
-  createWatchRoom
+  createWatchRoom,
+  getWatchRoom
 };
