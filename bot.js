@@ -91,8 +91,6 @@ const commands = [
       .setRequired(true)
   )
   .toJSON()
-    )
-    .toJSON()
 ];
 
 // ================================
@@ -164,8 +162,8 @@ const url = interaction.options.getString("link");
 
         const room = createWatchRoom(
           url,
-          user,
-          voicechannel
+          owner,
+          voiceChannel
         );
 
         await interaction.reply(room);
