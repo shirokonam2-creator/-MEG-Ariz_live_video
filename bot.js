@@ -69,13 +69,28 @@ const client = new Client({
 
 const commands = [
   new SlashCommandBuilder()
-    .setName("watch")
-    .setDescription("Tạo phòng xem video")
-    .addStringOption(option =>
-      option
-        .setName("url")
-        .setDescription("Link video")
-        .setRequired(true)
+  .setName("watch")
+  .setDescription("Tạo phòng xem video")
+  .addUserOption(option =>
+    option
+      .setName("chu_phong")
+      .setDescription("Chủ phòng xem")
+      .setRequired(true)
+  )
+  .addChannelOption(option =>
+    option
+      .setName("phong_call")
+      .setDescription("Phòng voice dùng để xem")
+      .setRequired(true)
+      .addChannelTypes(2)
+  )
+  .addStringOption(option =>
+    option
+      .setName("link")
+      .setDescription("Link video")
+      .setRequired(true)
+  )
+  .toJSON()
     )
     .toJSON()
 ];
@@ -134,7 +149,9 @@ client.on(Events.InteractionCreate, async interaction => {
 
       if (interaction.commandName === "watch") {
 
-        const url = interaction.options.getString("url");
+        const owner = interaction.options.getUser("chu_phong");
+const voiceChannel = interaction.options.getChannel("phong_call");
+const url = interaction.options.getString("link");
 
         if (!url) {
           await interaction.reply({
@@ -147,7 +164,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
         const room = createWatchRoom(
           url,
-          interaction.user
+          user,
+          voicechannel
         );
 
         await interaction.reply(room);
