@@ -3,14 +3,14 @@ require("dotenv").config();
 const http = require("http");
 
 const {
-  createCinemaRoom,
-  getRoom,
-  updateRoom
-} = require("./cinemaRoom");
-
-const {
-  startCinemaServer
-} = require("./cinemaServer");
+  Client,
+  GatewayIntentBits,
+  Events,
+  EmbedBuilder,
+  REST,
+  Routes,
+  SlashCommandBuilder
+} = require("discord.js");
 
 const {
   createWatchRoom
@@ -36,13 +36,22 @@ if (!process.env.GUILD_ID) {
 }
 
 // ================================
-// CINEMA LIVE SERVER
+// RENDER HTTP SERVER
 // ================================
 
-const PORT =
-  process.env.PORT || 10000;
+const PORT = process.env.PORT || 10000;
 
-startCinemaServer(PORT);
+const server = http.createServer((req, res) => {
+  res.writeHead(200, {
+    "Content-Type": "text/plain; charset=utf-8"
+  });
+
+  res.end("Arizu Cinema Bot is online!");
+});
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🌐 HTTP server đang chạy trên port ${PORT}`);
+});
 
 // ================================
 // DISCORD CLIENT
@@ -137,27 +146,11 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         const room = createWatchRoom(
-  url,
-  interaction.user
-);
+          url,
+          interaction.user
+        );
 
-const cinemaRoom = createCinemaRoom(
-  url,
-  interaction.user
-);
-
-const cinemaUrl =
-  `https://meg-ariz-live-video-1.onrender.com/cinema?room=${cinemaRoom.id}`;
-
-room.embeds[0].setDescription(
-  `**Phòng xem đã được tạo!**\n\n` +
-  `👤 Người tạo: ${interaction.user}\n` +
-  `🎬 [MEG]Ariz_CFM_BOT Room\n\n` +
-  `🌐 [Mở phòng xem](${cinemaUrl})\n\n` +
-  `📺 Phòng xem được đồng bộ trạng thái.`
-);
-
-await interaction.reply(room);
+        await interaction.reply(room);
 
         console.log(
           `🎬 ${interaction.user.tag} đã tạo phòng xem: ${url}`
