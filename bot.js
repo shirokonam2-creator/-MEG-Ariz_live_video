@@ -6,11 +6,11 @@ const {
   createCinemaRoom,
   getRoom,
   updateRoom
-} = require("/cinemaRoom");
+} = require("./cinemaRoom");
 
 const {
   startCinemaServer
-} = require("/cinemaServer");
+} = require("./cinemaServer");
 
 const {
   createWatchRoom
