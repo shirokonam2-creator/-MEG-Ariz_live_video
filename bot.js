@@ -183,5 +183,650 @@ const commands = [
 
     .toJSON(),
 
-  // ======================================
+    // ======================================
   // /join
+  // ======================================
+
+  new SlashCommandBuilder()
+
+    .setName("join")
+
+    .setDescription(
+      "Cho bot tham gia phòng thoại của bạn"
+    )
+
+    .toJSON()
+
+];
+
+// ========================================
+// ĐĂNG KÝ COMMAND
+// ========================================
+
+async function registerCommands() {
+
+  try {
+
+    console.log(
+      "⏳ Đang đăng ký /watch và /join..."
+    );
+
+    const rest = new REST({
+      version: "10"
+    }).setToken(
+      process.env.DISCORD_TOKEN
+    );
+
+    await rest.put(
+
+      Routes.applicationGuildCommands(
+        process.env.CLIENT_ID,
+        process.env.GUILD_ID
+      ),
+
+      {
+        body: commands
+      }
+
+    );
+
+    console.log(
+      "✅ Đã đăng ký /watch và /join!"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Không đăng ký được command:"
+    );
+
+    console.error(error);
+
+  }
+
+}
+
+// ========================================
+// READY
+// ========================================
+
+client.once(
+  Events.ClientReady,
+  readyClient => {
+
+    console.log(
+      `✅ Bot đã đăng nhập: ${readyClient.user.tag}`
+    );
+
+    console.log(
+      "🎬 [MEG]Ariz_CFM_BOT đang hoạt động!"
+    );
+
+  }
+);
+
+// ========================================
+// INTERACTION
+// ========================================
+
+client.on(
+  Events.InteractionCreate,
+  async interaction => {
+
+    try {
+
+      // ==================================
+      // SLASH COMMAND
+      // ==================================
+
+      if (interaction.isChatInputCommand()) {
+
+        // =================================
+        // /WATCH
+        // =================================
+
+        if (
+          interaction.commandName === "watch"
+        ) {
+
+          const owner =
+            interaction.options.getUser(
+              "chu_phong"
+            );
+
+          const voiceChannel =
+            interaction.options.getChannel(
+              "phong"
+            );
+
+          const input =
+            interaction.options.getString(
+              "phim"
+            );
+
+          if (!input) {
+
+            await interaction.reply({
+
+              content:
+                "❌ Bạn chưa nhập tên phim hoặc link video.",
+
+              ephemeral: true
+
+            });
+
+            return;
+
+          }
+
+          // --------------------------------
+          // Tách dữ liệu
+          // --------------------------------
+
+          const parts =
+            input.trim().split(/\s+/);
+
+          const links = [];
+          const names = [];
+
+          for (const part of parts) {
+
+            if (
+              part.startsWith("http://") ||
+              part.startsWith("https://")
+            ) {
+
+              links.push(part);
+
+            } else {
+
+              names.push(part);
+
+            }
+
+          }
+
+          // --------------------------------
+          // Kiểm tra link
+          // --------------------------------
+
+          if (links.length === 0) {
+
+            await interaction.reply({
+
+              content:
+                "❌ Bạn chưa cung cấp link video hợp lệ.",
+
+              ephemeral: true
+
+            });
+
+            return;
+
+          }
+
+          // --------------------------------
+          // Giới hạn video
+          // --------------------------------
+
+          if (links.length > MAX_VIDEOS) {
+
+            await interaction.reply({
+
+              content:
+                `❌ Chỉ được tối đa **${MAX_VIDEOS} video** cho mỗi Live.`,
+
+              ephemeral: true
+
+            });
+
+            return;
+
+          }
+
+          // --------------------------------
+          // Tên phim
+          // --------------------------------
+
+          const videoName =
+            names.length > 0
+              ? names.join(" ")
+              : "Video";
+
+          // --------------------------------
+          // Tạo Live
+          // --------------------------------
+
+          startWatchLive({
+
+            owner,
+            voiceChannel,
+            videoName,
+            links
+
+          });
+
+          // --------------------------------
+          // Lấy video đầu tiên
+          // --------------------------------
+
+          const currentVideo =
+            getWatchCurrentVideo();
+
+          // --------------------------------
+          // Tạo Cinema Room Discord
+          // --------------------------------
+
+          createWatchRoom(
+            links[0],
+            owner,
+            voiceChannel
+          );
+
+          // --------------------------------
+          // Embed Live
+          // --------------------------------
+
+          const embed =
+            new EmbedBuilder()
+
+              .setTitle(
+                "🎬 [MEG]Ariz_CFM_BOT — Live"
+              )
+
+              .setDescription(
+
+                `**${videoName}**\n\n` +
+
+                `👑 **Chủ phòng:** ${owner}\n` +
+
+                `🔊 **Phòng:** ${voiceChannel}\n\n` +
+
+                `▶️ **Đang phát:** ` +
+                `Video ${currentVideo.id}\n\n` +
+
+                `🔗 **Link:** ` +
+                `${currentVideo.link}\n\n` +
+
+                `📋 **Tổng số video:** ` +
+                `${links.length}`
+
+              )
+
+              .setTimestamp();
+
+          // --------------------------------
+          // Nút điều khiển
+          // --------------------------------
+
+          const row =
+            new ActionRowBuilder()
+
+              .addComponents(
+
+                new ButtonBuilder()
+                  .setCustomId("live_pause")
+                  .setLabel("⏸️ Tạm dừng")
+                  .setStyle(
+                    ButtonStyle.Secondary
+                  ),
+
+                new ButtonBuilder()
+                  .setCustomId("live_resume")
+                  .setLabel("▶️ Tiếp tục")
+                  .setStyle(
+                    ButtonStyle.Success
+                  ),
+
+                new ButtonBuilder()
+                  .setCustomId("live_next")
+                  .setLabel("⏭️ Tiếp")
+                  .setStyle(
+                    ButtonStyle.Primary
+                  ),
+
+                new ButtonBuilder()
+                  .setCustomId("live_stop")
+                  .setLabel("⏹️ Dừng")
+                  .setStyle(
+                    ButtonStyle.Danger
+                  )
+
+              );
+
+          await interaction.reply({
+
+            embeds: [
+              embed
+            ],
+
+            components: [
+              row
+            ]
+
+          });
+
+          console.log(
+            `🎬 ${interaction.user.tag} ` +
+            `tạo Live "${videoName}" ` +
+            `với ${links.length} video.`
+          );
+
+          return;
+
+        }
+
+        // =================================
+        // /JOIN
+        // =================================
+
+        if (
+          interaction.commandName === "join"
+        ) {
+
+          const member =
+            interaction.member;
+
+          if (
+            !member ||
+            !member.voice ||
+            !member.voice.channel
+          ) {
+
+            await interaction.reply({
+
+              content:
+                "❌ Bạn phải vào một phòng thoại trước!",
+
+              ephemeral: true
+
+            });
+
+            return;
+
+          }
+
+          const voiceChannel =
+            member.voice.channel;
+
+          const permissions =
+            voiceChannel.permissionsFor(
+              interaction.client.user
+            );
+
+          if (
+            !permissions ||
+            !permissions.has("Connect")
+          ) {
+
+            await interaction.reply({
+
+              content:
+                "❌ Bot không có quyền **Connect** " +
+                "vào phòng thoại này.",
+
+              ephemeral: true
+
+            });
+
+            return;
+
+          }
+
+          try {
+
+            joinVoiceChannel({
+
+              channelId:
+                voiceChannel.id,
+
+              guildId:
+                voiceChannel.guild.id,
+
+              adapterCreator:
+                voiceChannel
+                  .guild
+                  .voiceAdapterCreator,
+
+              selfDeaf: false,
+
+              selfMute: false
+
+            });
+
+            await interaction.reply({
+
+              content:
+                `🔊 **[MEG]Ariz_CFM_BOT đã tham gia phòng thoại!**\n\n` +
+                `📢 **Phòng:** ${voiceChannel}\n` +
+                `👤 **Người gọi:** ${interaction.user}\n\n` +
+                `🎬 Bot đã sẵn sàng cho Cinema Room.`
+
+            });
+
+            console.log(
+              `🔊 Bot đã join: ${voiceChannel.name}`
+            );
+
+          } catch (error) {
+
+            console.error(
+              "❌ Không thể join voice:"
+            );
+
+            console.error(error);
+
+            await interaction.reply({
+
+              content:
+                "❌ Bot không thể tham gia phòng thoại.",
+
+              ephemeral: true
+
+            });
+
+          }
+
+          return;
+
+        }
+
+      }
+
+      // ==================================
+      // BUTTON
+      // ==================================
+
+      if (interaction.isButton()) {
+
+        // --------------------------------
+        // PAUSE
+        // --------------------------------
+
+        if (
+          interaction.customId ===
+          "live_pause"
+        ) {
+
+          const success =
+            watchPause();
+
+          await interaction.reply({
+
+            content: success
+              ? "⏸️ Live đã tạm dừng."
+              : "❌ Không có Live đang hoạt động.",
+
+            ephemeral: true
+
+          });
+
+          return;
+
+        }
+
+        // --------------------------------
+        // RESUME
+        // --------------------------------
+
+        if (
+          interaction.customId ===
+          "live_resume"
+        ) {
+
+          const success =
+            watchResume();
+
+          await interaction.reply({
+
+            content: success
+              ? "▶️ Live đã tiếp tục."
+              : "❌ Không có Live đang hoạt động.",
+
+            ephemeral: true
+
+          });
+
+          return;
+
+        }
+
+        // --------------------------------
+        // NEXT
+        // --------------------------------
+
+        if (
+          interaction.customId ===
+          "live_next"
+        ) {
+
+          const next =
+            watchNext();
+
+          if (!next) {
+
+            await interaction.reply({
+
+              content:
+                "⏹️ Đã hết danh sách video.",
+
+              ephemeral: true
+
+            });
+
+            return;
+
+          }
+
+          await interaction.reply({
+
+            content:
+              `⏭️ Chuyển sang **video ${next.id}**.\n` +
+              `🔗 ${next.link}`,
+
+            ephemeral: true
+
+          });
+
+          return;
+
+        }
+
+        // --------------------------------
+        // STOP
+        // --------------------------------
+
+        if (
+          interaction.customId ===
+          "live_stop"
+        ) {
+
+          const success =
+            watchStop();
+
+          await interaction.reply({
+
+            content: success
+              ? "⏹️ Live đã dừng."
+              : "❌ Không có Live đang hoạt động.",
+
+            ephemeral: true
+
+          });
+
+          return;
+
+        }
+
+      }
+
+    } catch (error) {
+
+      console.error(
+        "❌ Interaction error:"
+      );
+
+      console.error(error);
+
+      if (
+        !interaction.replied &&
+        !interaction.deferred
+      ) {
+
+        await interaction.reply({
+
+          content:
+            "❌ Có lỗi khi xử lý lệnh.",
+
+          ephemeral: true
+
+        });
+
+      }
+
+    }
+
+  }
+);
+
+// ========================================
+// KHỞI ĐỘNG BOT
+// ========================================
+
+async function startBot() {
+
+  await registerCommands();
+
+  console.log(
+    "🔐 Đang kết nối tới Discord..."
+  );
+
+  try {
+
+    await client.login(
+      process.env.DISCORD_TOKEN
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Không thể đăng nhập Discord:"
+    );
+
+    console.error(error);
+
+    process.exit(1);
+
+  }
+
+}
+
+// ========================================
+// START
+// ========================================
+
+console.log(
+  "🚀 Đang khởi động [MEG]Ariz_CFM_BOT..."
+);
+
+startBot();
