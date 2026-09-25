@@ -19,27 +19,59 @@ const {
   joinVoiceChannel
 } = require("@discordjs/voice");
 
+// ========================================
+// WATCH ROOM
+// ========================================
+
 const {
   createWatchRoom,
   getWatchRoom
 } = require("./watchRoom");
 
 // ========================================
+// LIVE SYSTEM
+// ========================================
+
+const {
+  startWatchLive,
+  getWatchLive,
+  getWatchCurrentVideo,
+  watchNext,
+  watchPause,
+  watchResume,
+  watchStop,
+  clearWatchLive,
+  MAX_WATCH_LINKS
+} = require("./Lienket_watch");
+
+// ========================================
 // KIỂM TRA ENV
 // ========================================
 
 if (!process.env.DISCORD_TOKEN) {
-  console.error("❌ Thiếu DISCORD_TOKEN!");
+
+  console.error(
+    "❌ Thiếu DISCORD_TOKEN!"
+  );
+
   process.exit(1);
 }
 
 if (!process.env.CLIENT_ID) {
-  console.error("❌ Thiếu CLIENT_ID!");
+
+  console.error(
+    "❌ Thiếu CLIENT_ID!"
+  );
+
   process.exit(1);
 }
 
 if (!process.env.GUILD_ID) {
-  console.error("❌ Thiếu GUILD_ID!");
+
+  console.error(
+    "❌ Thiếu GUILD_ID!"
+  );
+
   process.exit(1);
 }
 
@@ -47,32 +79,50 @@ if (!process.env.GUILD_ID) {
 // RENDER HTTP SERVER
 // ========================================
 
-const PORT = process.env.PORT || 10000;
+const PORT =
+  process.env.PORT || 10000;
 
-const server = http.createServer((req, res) => {
-  res.writeHead(200, {
-    "Content-Type": "text/plain; charset=utf-8"
-  });
+const server =
+  http.createServer(
+    (req, res) => {
 
-  res.end("Arizu Cinema Bot is online!");
-});
+      res.writeHead(200, {
+        "Content-Type":
+          "text/plain; charset=utf-8"
+      });
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(
-    `🌐 HTTP server đang chạy trên port ${PORT}`
+      res.end(
+        "Arizu Cinema Bot is online!"
+      );
+    }
   );
-});
+
+server.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+
+    console.log(
+      `🌐 HTTP server đang chạy trên port ${PORT}`
+    );
+  }
+);
 
 // ========================================
 // DISCORD CLIENT
 // ========================================
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates
-  ]
-});
+const client =
+  new Client({
+
+    intents: [
+
+      GatewayIntentBits.Guilds,
+
+      GatewayIntentBits.GuildVoiceStates
+
+    ]
+  });
 
 // ========================================
 // SLASH COMMANDS
@@ -85,29 +135,55 @@ const commands = [
   // ======================================
 
   new SlashCommandBuilder()
+
     .setName("watch")
-    .setDescription("Tạo phòng xem video")
+
+    .setDescription(
+      "Tạo phòng xem video"
+    )
 
     .addUserOption(option =>
+
       option
+
         .setName("chu_phong")
-        .setDescription("Chủ phòng xem")
+
+        .setDescription(
+          "Chủ phòng xem"
+        )
+
         .setRequired(true)
+
     )
 
     .addChannelOption(option =>
+
       option
+
         .setName("phong_call")
-        .setDescription("Phòng voice dùng để xem")
+
+        .setDescription(
+          "Phòng voice dùng để xem"
+        )
+
         .setRequired(true)
+
         .addChannelTypes(2)
+
     )
 
     .addStringOption(option =>
+
       option
-        .setName("link")
-        .setDescription("Link video")
+
+        .setName("phim")
+
+        .setDescription(
+          "Tên phim + tối đa 3 link video, cách nhau bằng dấu cách"
+        )
+
         .setRequired(true)
+
     )
 
     .toJSON(),
@@ -117,10 +193,13 @@ const commands = [
   // ======================================
 
   new SlashCommandBuilder()
+
     .setName("join")
+
     .setDescription(
       "Cho bot tham gia phòng thoại của bạn"
     )
+
     .toJSON()
 ];
 
@@ -136,20 +215,27 @@ async function registerCommands() {
       "⏳ Đang đăng ký /watch và /join..."
     );
 
-    const rest = new REST({
-      version: "10"
-    }).setToken(
-      process.env.DISCORD_TOKEN
-    );
+    const rest =
+      new REST({
+        version: "10"
+      }).setToken(
+        process.env.DISCORD_TOKEN
+      );
 
     await rest.put(
+
       Routes.applicationGuildCommands(
+
         process.env.CLIENT_ID,
+
         process.env.GUILD_ID
+
       ),
+
       {
         body: commands
       }
+
     );
 
     console.log(
@@ -171,7 +257,9 @@ async function registerCommands() {
 // ========================================
 
 client.once(
+
   Events.ClientReady,
+
   readyClient => {
 
     console.log(
@@ -181,6 +269,10 @@ client.once(
     console.log(
       "🎬 [MEG]Ariz_CFM_BOT đang hoạt động!"
     );
+
+    console.log(
+      `📺 Giới hạn /watch: ${MAX_WATCH_LINKS} link`
+    );
   }
 );
 
@@ -189,7 +281,9 @@ client.once(
 // ========================================
 
 client.on(
+
   Events.InteractionCreate,
+
   async interaction => {
 
     try {
@@ -198,321 +292,19 @@ client.on(
       // SLASH COMMAND
       // ==================================
 
-      if (interaction.isChatInputCommand()) {
+      if (
+        interaction.isChatInputCommand()
+      ) {
 
         // =================================
         // /watch
         // =================================
 
         if (
-          interaction.commandName === "watch"
+          interaction.commandName ===
+          "watch"
         ) {
 
-          const owner =
-            interaction.options.getUser(
-              "chu_phong"
-            );
-
-          const voiceChannel =
-            interaction.options.getChannel(
-              "phong_call"
-            );
-
-          const url =
-            interaction.options.getString(
-              "link"
-            );
-
-          // Kiểm tra link
-          if (!url) {
-
-            await interaction.reply({
-              content:
-                "❌ Bạn chưa nhập link video.",
-              ephemeral: true
-            });
-
-            return;
-          }
-
-          // Tạo Cinema Room
-          const room =
-            createWatchRoom(
-              url,
-              owner,
-              voiceChannel
-            );
-
-          await interaction.reply(room);
-
-          console.log(
-            `🎬 ${interaction.user.tag}` +
-            ` đã tạo phòng xem: ${url}`
-          );
-
-          return;
-        }
-
-        // =================================
-        // /join
-        // =================================
-
-        if (
-          interaction.commandName === "join"
-        ) {
-
-          const member =
-            interaction.member;
-
           // -------------------------------
-          // Kiểm tra người dùng có ở voice
+          // Lấy thông tin
           // -------------------------------
-
-          if (
-            !member ||
-            !member.voice ||
-            !member.voice.channel
-          ) {
-
-            await interaction.reply({
-              content:
-                "❌ Bạn phải vào một phòng thoại trước!",
-              ephemeral: true
-            });
-
-            return;
-          }
-
-          const voiceChannel =
-            member.voice.channel;
-
-          // -------------------------------
-          // Kiểm tra quyền bot
-          // -------------------------------
-
-          const permissions =
-            voiceChannel.permissionsFor(
-              interaction.client.user
-            );
-
-          if (
-            !permissions ||
-            !permissions.has("Connect")
-          ) {
-
-            await interaction.reply({
-              content:
-                "❌ Bot không có quyền **Connect** " +
-                "vào phòng thoại này.",
-              ephemeral: true
-            });
-
-            return;
-          }
-
-          // -------------------------------
-          // Bot join voice
-          // -------------------------------
-
-          try {
-
-            joinVoiceChannel({
-
-              channelId:
-                voiceChannel.id,
-
-              guildId:
-                voiceChannel.guild.id,
-
-              adapterCreator:
-                voiceChannel
-                  .guild
-                  .voiceAdapterCreator,
-
-              selfDeaf: false,
-
-              selfMute: false
-            });
-
-            // -----------------------------
-            // Thông báo
-            // -----------------------------
-
-            await interaction.reply({
-
-              content:
-                `🔊 **[MEG]Ariz_CFM_BOT đã tham gia phòng thoại!**\n\n` +
-                `📢 **Phòng:** ${voiceChannel}\n` +
-                `👤 **Người gọi:** ${interaction.user}\n\n` +
-                `🎬 Bot đã sẵn sàng cho Cinema Room.`
-
-            });
-
-            console.log(
-              `🔊 Bot đã join voice: ` +
-              `${voiceChannel.name} ` +
-              `(${voiceChannel.id})`
-            );
-
-          } catch (error) {
-
-            console.error(
-              "❌ Không thể join voice:"
-            );
-
-            console.error(error);
-
-            await interaction.reply({
-
-              content:
-                "❌ Bot không thể tham gia " +
-                "phòng thoại.\n\n" +
-                "Hãy kiểm tra quyền **Connect** " +
-                "và **Speak** của bot.",
-
-              ephemeral: true
-            });
-          }
-
-          return;
-        }
-      }
-
-      // ==================================
-      // BUTTON
-      // ==================================
-
-      if (interaction.isButton()) {
-
-        // -------------------------------
-        // watch_info
-        // -------------------------------
-
-        if (
-          interaction.customId ===
-          "watch_info"
-        ) {
-
-          const room =
-            getWatchRoom();
-
-          if (!room) {
-
-            await interaction.reply({
-
-              content:
-                "❌ Hiện không có Cinema Room nào " +
-                "đang hoạt động.",
-
-              ephemeral: true
-            });
-
-            return;
-          }
-
-          const embed =
-            new EmbedBuilder()
-
-              .setTitle(
-                "ℹ️ [MEG]Ariz_CFM_BOT"
-              )
-
-              .setDescription(
-
-                `🎬 **Cinema Room**\n\n` +
-
-                `👑 **Chủ phòng:** ${room.owner}\n` +
-
-                `🔊 **Phòng call:** ` +
-                `${room.voiceChannel}\n\n` +
-
-                `🔗 **Video:** ${room.url}\n\n` +
-
-                `👤 **Người xem:** ` +
-                `${interaction.user}\n\n` +
-
-                `📺 Hệ thống phòng xem ` +
-                `đang hoạt động.`
-
-              )
-
-              .setTimestamp();
-
-          await interaction.reply({
-
-            embeds: [embed],
-
-            ephemeral: true
-          });
-
-          return;
-        }
-      }
-
-    } catch (error) {
-
-      console.error(
-        "❌ Interaction error:"
-      );
-
-      console.error(error);
-
-      // Tránh lỗi khi interaction
-      // đã được trả lời trước đó
-
-      if (
-        !interaction.replied &&
-        !interaction.deferred
-      ) {
-
-        await interaction.reply({
-
-          content:
-            "❌ Có lỗi khi xử lý lệnh.",
-
-          ephemeral: true
-        });
-      }
-    }
-  }
-);
-
-// ========================================
-// KHỞI ĐỘNG BOT
-// ========================================
-
-async function startBot() {
-
-  await registerCommands();
-
-  console.log(
-    "🔐 Đang kết nối tới Discord..."
-  );
-
-  try {
-
-    await client.login(
-      process.env.DISCORD_TOKEN
-    );
-
-  } catch (error) {
-
-    console.error(
-      "❌ Không thể đăng nhập Discord:"
-    );
-
-    console.error(error);
-
-    process.exit(1);
-  }
-}
-
-// ========================================
-// START
-// ========================================
-
-console.log(
-  "🚀 Đang khởi động [MEG]Ariz_CFM_BOT..."
-);
-
-startBot();
