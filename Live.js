@@ -9,7 +9,7 @@ const {
 
 const {
   normalizeName
-} = require("./Namevideo");
+} = require("./namevideo");
 
 const {
   createPlayOrder,
