@@ -5,7 +5,12 @@
 
 const MAX_WATCH_LINKS = 3;
 
+// ========================================
+// Tạo thứ tự phát
+// ========================================
+
 function createPlayOrder(videos) {
+
   if (!Array.isArray(videos)) {
     return [];
   }
@@ -18,12 +23,18 @@ function createPlayOrder(videos) {
     }));
 }
 
+// ========================================
+// Lấy index tiếp theo
+// ========================================
+
 function getNextIndex(currentIndex, total) {
+
   if (total <= 0) {
     return -1;
   }
 
-  const nextIndex = currentIndex + 1;
+  const nextIndex =
+    currentIndex + 1;
 
   if (nextIndex >= total) {
     return -1;
@@ -32,26 +43,51 @@ function getNextIndex(currentIndex, total) {
   return nextIndex;
 }
 
+// ========================================
+// Lấy video theo thứ tự
+// ========================================
+
 function getVideoByOrder(videos, index) {
+
   if (!Array.isArray(videos)) {
     return null;
   }
 
-  if (index < 0 || index >= videos.length) {
+  if (
+    index < 0 ||
+    index >= videos.length
+  ) {
     return null;
   }
 
   return videos[index];
 }
 
-function hasReachedEnd(currentIndex, total) {
+// ========================================
+// Kiểm tra đã hết video
+// ========================================
+
+function hasReachedEnd(
+  currentIndex,
+  total
+) {
+
   return currentIndex >= total - 1;
 }
 
+// ========================================
+// EXPORT
+// ========================================
+
 module.exports = {
+
   MAX_WATCH_LINKS,
+
   createPlayOrder,
+
   getNextIndex,
+
   getVideoByOrder,
+
   hasReachedEnd
 };
