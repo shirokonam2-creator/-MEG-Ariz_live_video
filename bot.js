@@ -22,14 +22,11 @@ const {
 
 const {
   startWatchLive,
-  getWatchLive,
   getWatchCurrentVideo,
   watchNext,
   watchPause,
   watchResume,
-  watchStop,
-  clearWatchLive,
-  MAX_WATCH_LINKS
+  watchStop
 } = require("./Lienket_watch");
 
 const {
@@ -37,9 +34,11 @@ const {
 } = require("./watchRoom");
 
 // ========================================
-// GIỚI HẠN VIDEO
+// GIỚI HẠN INPUT /watch
 // ========================================
 
+// Đây là giới hạn của /watch.
+// KHÔNG phải MAX_WATCH_LINKS.
 const MAX_VIDEOS = 3;
 
 // ========================================
@@ -62,23 +61,18 @@ if (!process.env.GUILD_ID) {
 }
 
 // ========================================
-// RENDER HTTP SERVER
+// HTTP SERVER
 // ========================================
 
 const PORT = process.env.PORT || 10000;
 
 const server = http.createServer((req, res) => {
-
   if (req.url === "/") {
-
     res.writeHead(200, {
       "Content-Type": "text/plain; charset=utf-8"
     });
 
-    res.end(
-      "Arizu Cinema Bot is online!"
-    );
-
+    res.end("Arizu Cinema Bot is online!");
     return;
   }
 
@@ -89,33 +83,52 @@ const server = http.createServer((req, res) => {
   res.end("Not Found");
 });
 
-server.listen(
-  PORT,
-  "0.0.0.0",
-  () => {
-
-    console.log(
-      `🌐 HTTP server đang chạy trên port ${PORT}`
-    );
-
-  }
-);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(
+    `🌐 HTTP server đang chạy trên port ${PORT}`
+  );
+});
 
 // ========================================
 // DISCORD CLIENT
 // ========================================
 
 const client = new Client({
-
   intents: [
-
     GatewayIntentBits.Guilds,
-
     GatewayIntentBits.GuildVoiceStates
-
   ]
-
 });
+
+// ========================================
+// TÁCH TÊN PHIM + LINK
+// ========================================
+
+function parseWatchInput(input) {
+  const text = String(input || "").trim();
+
+  if (!text) {
+    return {
+      videoName: "",
+      links: [],
+      tooManyLinks: false
+    };
+  }
+
+  const links =
+    text.match(/https?:\/\/[^\s]+/gi) || [];
+
+  const videoName = text
+    .replace(/https?:\/\/[^\s]+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return {
+    videoName,
+    links,
+    tooManyLinks: links.length > MAX_VIDEOS
+  };
+}
 
 // ========================================
 // SLASH COMMANDS
@@ -128,73 +141,48 @@ const commands = [
   // ======================================
 
   new SlashCommandBuilder()
-
     .setName("watch")
-
     .setDescription(
-      "Tạo Live và phát danh sách video"
+      "Tạo Live với tối đa 3 video"
     )
 
     .addUserOption(option =>
-
       option
-
         .setName("chu_phong")
-
-        .setDescription(
-          "Chủ phòng"
-        )
-
+        .setDescription("Chủ phòng")
         .setRequired(true)
-
     )
 
     .addChannelOption(option =>
-
       option
-
         .setName("phong")
-
-        .setDescription(
-          "Phòng voice"
-        )
-
+        .setDescription("Phòng voice")
         .setRequired(true)
-
         .addChannelTypes(
           ChannelType.GuildVoice
         )
-
     )
 
     .addStringOption(option =>
-
       option
-
         .setName("phim")
-
         .setDescription(
-          "Tên phim và tối đa 3 link video, cách nhau bằng dấu cách"
+          "Tên phim + tối đa 3 link video"
         )
-
         .setRequired(true)
-
     )
 
     .toJSON(),
 
-    // ======================================
+  // ======================================
   // /join
   // ======================================
 
   new SlashCommandBuilder()
-
     .setName("join")
-
     .setDescription(
       "Cho bot tham gia phòng thoại của bạn"
     )
-
     .toJSON()
 
 ];
@@ -204,9 +192,7 @@ const commands = [
 // ========================================
 
 async function registerCommands() {
-
   try {
-
     console.log(
       "⏳ Đang đăng ký /watch và /join..."
     );
@@ -218,16 +204,13 @@ async function registerCommands() {
     );
 
     await rest.put(
-
       Routes.applicationGuildCommands(
         process.env.CLIENT_ID,
         process.env.GUILD_ID
       ),
-
       {
         body: commands
       }
-
     );
 
     console.log(
@@ -235,15 +218,12 @@ async function registerCommands() {
     );
 
   } catch (error) {
-
     console.error(
       "❌ Không đăng ký được command:"
     );
 
     console.error(error);
-
   }
-
 }
 
 // ========================================
@@ -304,84 +284,95 @@ client.on(
               "phim"
             );
 
-          if (!input) {
+          // --------------------------------
+          // Kiểm tra dữ liệu
+          // --------------------------------
 
+          if (!owner) {
             await interaction.reply({
+              content:
+                "❌ Không xác định được chủ phòng.",
+              ephemeral: true
+            });
 
+            return;
+          }
+
+          if (!voiceChannel) {
+            await interaction.reply({
+              content:
+                "❌ Không xác định được phòng voice.",
+              ephemeral: true
+            });
+
+            return;
+          }
+
+          if (!input) {
+            await interaction.reply({
               content:
                 "❌ Bạn chưa nhập tên phim hoặc link video.",
-
               ephemeral: true
-
             });
 
             return;
-
           }
 
           // --------------------------------
-          // Tách dữ liệu
+          // Kiểm tra loại channel
           // --------------------------------
 
-          const parts =
-            input.trim().split(/\s+/);
-
-          const links = [];
-          const names = [];
-
-          for (const part of parts) {
-
-            if (
-              part.startsWith("http://") ||
-              part.startsWith("https://")
-            ) {
-
-              links.push(part);
-
-            } else {
-
-              names.push(part);
-
-            }
-
-          }
-
-          // --------------------------------
-          // Kiểm tra link
-          // --------------------------------
-
-          if (links.length === 0) {
+          if (
+            voiceChannel.type !==
+            ChannelType.GuildVoice
+          ) {
 
             await interaction.reply({
-
               content:
-                "❌ Bạn chưa cung cấp link video hợp lệ.",
-
+                "❌ Kênh được chọn phải là phòng thoại.",
               ephemeral: true
-
             });
 
             return;
-
           }
 
           // --------------------------------
-          // Giới hạn video
+          // Tách tên + link
           // --------------------------------
 
-          if (links.length > MAX_VIDEOS) {
+          const parsed =
+            parseWatchInput(input);
+
+          // --------------------------------
+          // Kiểm tra số link
+          // --------------------------------
+
+          if (parsed.tooManyLinks) {
 
             await interaction.reply({
-
               content:
-                `❌ Chỉ được tối đa **${MAX_VIDEOS} video** cho mỗi Live.`,
-
+                `❌ Bạn chỉ được nhập tối đa **${MAX_VIDEOS} link video**.`,
               ephemeral: true
-
             });
 
             return;
+          }
 
+          // --------------------------------
+          // Phải có ít nhất 1 link
+          // --------------------------------
+
+          if (
+            parsed.links.length === 0
+          ) {
+
+            await interaction.reply({
+              content:
+                "❌ Bạn chưa nhập link video hợp lệ.",
+              ephemeral: true
+            });
+
+            return;
           }
 
           // --------------------------------
@@ -389,39 +380,117 @@ client.on(
           // --------------------------------
 
           const videoName =
-            names.length > 0
-              ? names.join(" ")
-              : "Video";
+            parsed.videoName ||
+            "Video không có tên";
+
+          const links =
+            parsed.links;
+
+          // --------------------------------
+          // Kiểm tra quyền bot
+          // --------------------------------
+
+          const permissions =
+            voiceChannel.permissionsFor(
+              interaction.client.user
+            );
+
+          if (
+            !permissions ||
+            !permissions.has("Connect")
+          ) {
+
+            await interaction.reply({
+              content:
+                "❌ Bot không có quyền **Connect** vào phòng thoại này.",
+              ephemeral: true
+            });
+
+            return;
+          }
 
           // --------------------------------
           // Tạo Live
           // --------------------------------
 
-          startWatchLive({
+          let live;
 
-            owner,
-            voiceChannel,
-            videoName,
-            links
+          try {
 
-          });
+            live =
+              startWatchLive({
+                owner,
+                voiceChannel,
+                videoName,
+                links
+              });
+
+          } catch (error) {
+
+            console.error(
+              "❌ Không thể tạo Live:"
+            );
+
+            console.error(error);
+
+            await interaction.reply({
+              content:
+                `❌ Không thể tạo Live.\n> ${error.message}`,
+              ephemeral: true
+            });
+
+            return;
+          }
 
           // --------------------------------
-          // Lấy video đầu tiên
+          // Video hiện tại
           // --------------------------------
 
           const currentVideo =
             getWatchCurrentVideo();
 
+          if (!currentVideo) {
+
+            await interaction.reply({
+              content:
+                "❌ Không lấy được video đầu tiên.",
+              ephemeral: true
+            });
+
+            return;
+          }
+
           // --------------------------------
-          // Tạo Cinema Room Discord
+          // Tạo Cinema Room
           // --------------------------------
 
-          createWatchRoom(
-            links[0],
-            owner,
-            voiceChannel
-          );
+          let cinemaRoom;
+
+          try {
+
+            cinemaRoom =
+              createWatchRoom(
+                links[0],
+                owner,
+                voiceChannel
+              );
+
+          } catch (error) {
+
+            console.error(
+              "❌ Không thể tạo Cinema Room:"
+            );
+
+            console.error(error);
+
+            await interaction.reply({
+              content:
+                "❌ Live đã được tạo nhưng Cinema Room không thể tạo.",
+              ephemeral: true
+            });
+
+            return;
+          }
 
           // --------------------------------
           // Embed Live
@@ -429,30 +498,22 @@ client.on(
 
           const embed =
             new EmbedBuilder()
-
               .setTitle(
                 "🎬 [MEG]Ariz_CFM_BOT — Live"
               )
-
               .setDescription(
-
                 `**${videoName}**\n\n` +
 
                 `👑 **Chủ phòng:** ${owner}\n` +
 
                 `🔊 **Phòng:** ${voiceChannel}\n\n` +
 
-                `▶️ **Đang phát:** ` +
-                `Video ${currentVideo.id}\n\n` +
+                `▶️ **Đang phát:** Video ${currentVideo.id}\n\n` +
 
-                `🔗 **Link:** ` +
-                `${currentVideo.link}\n\n` +
+                `🔗 **Link:** ${currentVideo.link}\n\n` +
 
-                `📋 **Tổng số video:** ` +
-                `${links.length}`
-
+                `📋 **Tổng số video:** ${links.length}`
               )
-
               .setTimestamp();
 
           // --------------------------------
@@ -461,7 +522,6 @@ client.on(
 
           const row =
             new ActionRowBuilder()
-
               .addComponents(
 
                 new ButtonBuilder()
@@ -494,6 +554,10 @@ client.on(
 
               );
 
+          // --------------------------------
+          // Reply
+          // --------------------------------
+
           await interaction.reply({
 
             embeds: [
@@ -508,12 +572,11 @@ client.on(
 
           console.log(
             `🎬 ${interaction.user.tag} ` +
-            `tạo Live "${videoName}" ` +
+            `đã tạo Live "${videoName}" ` +
             `với ${links.length} video.`
           );
 
           return;
-
         }
 
         // =================================
@@ -534,20 +597,20 @@ client.on(
           ) {
 
             await interaction.reply({
-
               content:
                 "❌ Bạn phải vào một phòng thoại trước!",
-
               ephemeral: true
-
             });
 
             return;
-
           }
 
           const voiceChannel =
             member.voice.channel;
+
+          // --------------------------------
+          // Kiểm tra quyền
+          // --------------------------------
 
           const permissions =
             voiceChannel.permissionsFor(
@@ -560,18 +623,17 @@ client.on(
           ) {
 
             await interaction.reply({
-
               content:
-                "❌ Bot không có quyền **Connect** " +
-                "vào phòng thoại này.",
-
+                "❌ Bot không có quyền **Connect** vào phòng thoại này.",
               ephemeral: true
-
             });
 
             return;
-
           }
+
+          // --------------------------------
+          // Join Voice
+          // --------------------------------
 
           try {
 
@@ -617,20 +679,15 @@ client.on(
             console.error(error);
 
             await interaction.reply({
-
               content:
                 "❌ Bot không thể tham gia phòng thoại.",
-
               ephemeral: true
-
             });
 
           }
 
           return;
-
         }
-
       }
 
       // ==================================
@@ -662,7 +719,6 @@ client.on(
           });
 
           return;
-
         }
 
         // --------------------------------
@@ -688,7 +744,6 @@ client.on(
           });
 
           return;
-
         }
 
         // --------------------------------
@@ -706,16 +761,12 @@ client.on(
           if (!next) {
 
             await interaction.reply({
-
               content:
                 "⏹️ Đã hết danh sách video.",
-
               ephemeral: true
-
             });
 
             return;
-
           }
 
           await interaction.reply({
@@ -729,7 +780,6 @@ client.on(
           });
 
           return;
-
         }
 
         // --------------------------------
@@ -755,7 +805,6 @@ client.on(
           });
 
           return;
-
         }
 
       }
@@ -816,9 +865,7 @@ async function startBot() {
     console.error(error);
 
     process.exit(1);
-
   }
-
 }
 
 // ========================================
