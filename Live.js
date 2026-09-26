@@ -349,6 +349,10 @@ function clearLive() {
   activeLive = null;
 }
 
+// ========================================
+// EXPORT
+// ========================================
+
 module.exports = {
 
   MAX_WATCH_LINKS,
@@ -359,19 +363,4 @@ module.exports = {
 
   getCurrentVideo,
 
-  nextVideo,
-
-  startRandomMode,
-
-  addRandomMedia,
-
-  getRandomMediaList,
-
-  pauseLive,
-
-  resumeLive,
-
-  stopLive,
-
-  clearLive
-};
+ 
