@@ -32,6 +32,12 @@ function startWatchLive({
     );
   }
 
+  if (links.length === 0) {
+    throw new Error(
+      "Phải có ít nhất 1 link video."
+    );
+  }
+
   if (links.length > MAX_WATCH_LINKS) {
     throw new Error(
       `Chỉ được tối đa ${MAX_WATCH_LINKS} link video.`
@@ -102,6 +108,10 @@ function clearWatchLive() {
   clearLive();
 }
 
+// ========================================
+// EXPORT
+// ========================================
+
 module.exports = {
 
   MAX_WATCH_LINKS,
@@ -121,4 +131,5 @@ module.exports = {
   watchStop,
 
   clearWatchLive
+
 };
